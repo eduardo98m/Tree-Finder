@@ -35,16 +35,36 @@ st.title('La Floresta Tree Finder')
 # Map
 
 # Query the Map Data
+
+
 map_data = pd.DataFrame({
     #'awesome cities' : ['Chicago', 'Minneapolis', 'Louisville', 'Topeka'],
     'lat' : [41.868171, 44.979840,  38.257972, 39.030575],
-    'lon' : [-87.667458, -93.272474, -85.765187,  -95.702548]
+    'lon' : [-87.667458, -93.272474, -85.765187,  -95.702548],
+	'name' : ["pepe", "pablo", "pedro", "carlos"],
 })
-
+# Pydeck
+#----------------------------------------------------------------------------------------#
 # Display the Map Data
 #st.map(map_data) <- Simpler function but almost no customization
 # Adding code so we can have map default to the center of the data
 midpoint = (np.average(map_data['lat']), np.average(map_data['lon']))
+
+
+id ="1b1OpPAXFgEYblLGrzfEYLf8gUN2pF9tj"
+
+img_src = "https://drive.google.com/thumbnail?id=" + id
+
+tooltip = {
+   "html" : "<b>Latitude: </b> {lat} <br /> "
+   		   "<b>Longitude: </b> {lon} <br /> "
+		   "<b>name: </b> {name} <br /> "
+		   "<b>Image</b> <img src= " + str(img_src) + ">",
+   "style": {
+        "backgroundColor": "steelblue",
+        "color": "white"
+   }
+}
 
 st.header('Mapa')
 st.pydeck_chart(pdk.Deck(
@@ -56,13 +76,16 @@ st.pydeck_chart(pdk.Deck(
 				data = map_data,
 				get_position=['lon', 'lat'],
 				radiusScale = 250,
-				radiusMinPixels = 5,
-				getFillColor = [248, 24, 148],)
-			]
+				radiusMinPixels = 5, # Modify to match the scale of the park trees
+				getFillColor = [248, 24, 148],
+				pickable=True,
+				)
+			],
+			tooltip=tooltip
 		))
 
 
-
+#----------------------------------------------------------------------------------------#
 with st.form(key='tree_query'):
 	query = {}
 	st.header('Opciones de Búsqueda')
