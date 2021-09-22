@@ -4,13 +4,9 @@ import pandas as pd
 import requests
 import json
 import os
+import ids_file
 
 directorio_credentials = 'credentials_module.json'
-sheet_id = "1xBSf09SDMTn2gNMAJrk45kFUsM-SxJA1PWS3ZqtTGmE"
-sheets = {'Sector 1': '850096063',
-          'Sector 2': '1546506205',
-          'Sector 3': '1214437073',
-          'Sector 4': '2059242964'}
 
 # Method used to login to google drive.
 
@@ -26,13 +22,16 @@ def login():
     
     return GoogleDrive(gauth)
 
+# Method that reads every sheet contained in the data worksheet and creates a new .csv file for every single one of them.
+# This, with the intention of making the data more handy to use.
+
 def write_trees_csvs():
     credentials = login()
     with open(directorio_credentials) as json_file:
         bearer = json.load(json_file)["token_response"]["access_token"]
     
-    for sheet in sheets.keys():
-        url = 'https://docs.google.com/spreadsheets/d/' + sheet_id + '/gviz/tq?tqx=out:csv&gid=' + sheets[sheet]
+    for sheet in ids_file.sheets.keys():
+        url = 'https://docs.google.com/spreadsheets/d/' + ids_file.sheet_id + '/gviz/tq?tqx=out:csv&gid=' + ids_file.sheets[sheet]
         headers = {'Authorization': 'Bearer ' + bearer}
         res = requests.get(url, headers=headers)
         with open(sheet + '.csv', 'wb') as f:
@@ -45,7 +44,7 @@ def get_trees_dataframes():
     
     column_names = pd.read_csv('Sector 1.csv').columns
     df = pd.DataFrame(columns = column_names)
-    for elem in sheets.keys():
+    for elem in ids_file.sheets.keys():
         try:
             df_aux = pd.read_csv(elem + ".csv")
             df_aux.loc[:,'Sector'] = elem.split(" ")[1]
@@ -60,30 +59,19 @@ def get_trees_dataframes():
 
     return df
 
-def get_image_id(name):
+# Method that, given an image name and a dictionary containing ids for image folders it returns
+# the id of that image if its contained in any of those folders.
 
+def get_image_id(name,images_ids):
+
+    credentials = login()
     try:
-        credentials = login()
-        file_list = credentials.ListFile({'q': "'18kj_O5OGdTXRhBrZLLkfj7KXvHnGKgHu' in parents and trashed=false"}).GetList()
-        for file in file_list:
-            if(file['title']==str(name)+".jpg"):
-                result = file['id']
-                return result
-        file_list = credentials.ListFile({'q': "'1hAA33dTtetXMe7hjt4_SJI26yL2xQtWq' in parents and trashed=false"}).GetList()
-        for file in file_list:
-            if(file['title']==str(name)+".jpg"):
-                result = file['id']
-                return result
-        file_list = credentials.ListFile({'q': "'1zFeJI4Tzwybo4jNmdOdZ_leACayhAgOD' in parents and trashed=false"}).GetList()
-        for file in file_list:
-            if(file['title']==str(name)+".jpg"):
-                result = file['id']
-                return result
-        file_list = credentials.ListFile({'q': "'1VvTY9_IpU0VfYQnqh9GiNUVtHq4QhBre' in parents and trashed=false"}).GetList()
-        for file in file_list:
-            if(file['title']==str(name)+".jpg"):
-                result = file['id']
-                return result
+        for key in images_ids.keys():
+            file_list = credentials.ListFile({'q': "'"+images_ids[key]+"' in parents and trashed=false"}).GetList()
+            for file in file_list:
+                if(file['title']==str(name)+".jpg"):
+                    result = file['id']
+                    return result
 
     except Exception as e:
         print("The exception is: " + str(e))
@@ -92,31 +80,35 @@ def get_image_id(name):
 # Here we iterate by the column_name column. Reading the file's name we search for its id and
 # insert it in a new column called new_column_name
 
-def get_image_ids_aux(column_name, df, new_column_name):
+def get_image_ids_aux(column_name, df, new_column_name, images_ids):
     
     df_aux = df[column_name]
     id_aux = []
     for elem in df_aux:
         if (elem != 'NaN' and elem != None):
-            id_aux.append(get_image_id(elem))
+            id_aux.append(get_image_id(elem, images_ids))
         else:
             id_aux.append(None)
 
     df[new_column_name] = id_aux
     return df
 
-def get_image_ids(df):
+# Method that, given the dataframe containing the trees data and a dictionary containing the google drive
+# id for different image folders it returns a modified dataframe with new columns that contain the file ids
+# for every picture of those trees contained in the .csv
+
+def get_image_ids(df, images_ids):
 
     column_names = ['ID Foto Tronco', 'ID Foto Hojas', 'ID Foto inflorescencia', 'ID Foto fruto', 'ID Foto copa']
     new_column_names = ['Tronco ID', 'Hojas ID', 'Flores ID', 'Fruto ID', 'Copa ID']
 
     for num in range(len(column_names)):
-        df = get_image_ids_aux(column_names[num], df, new_column_names[num])
+        df = get_image_ids_aux(column_names[num], df, new_column_names[num], images_ids)
     
     return df
 
 if __name__ == '__main__':
     write_trees_csvs()
     df = get_trees_dataframes()
-    df2 = get_image_ids(df)
+    df2 = get_image_ids(df, ids_file.images_ids)
     df2.to_csv('result.csv')
