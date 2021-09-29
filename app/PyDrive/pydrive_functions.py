@@ -25,8 +25,7 @@ def login():
 # Method that reads every sheet contained in the data worksheet and creates a new .csv file for every single one of them.
 # This, with the intention of making the data more handy to use.
 
-def write_trees_csvs():
-    credentials = login()
+def write_trees_csvs(credentials):
     with open(directorio_credentials) as json_file:
         bearer = json.load(json_file)["token_response"]["access_token"]
     
@@ -62,9 +61,8 @@ def get_trees_dataframes():
 # Method that, given an image name and a dictionary containing ids for image folders it returns
 # the id of that image if its contained in any of those folders.
 
-def get_image_id(name,images_ids):
+def get_image_id(name,images_ids, credentials):
 
-    credentials = login()
     try:
         for key in images_ids.keys():
             file_list = credentials.ListFile({'q': "'"+images_ids[key]+"' in parents and trashed=false"}).GetList()
@@ -80,13 +78,13 @@ def get_image_id(name,images_ids):
 # Here we iterate by the column_name column. Reading the file's name we search for its id and
 # insert it in a new column called new_column_name
 
-def get_image_ids_aux(column_name, df, new_column_name, images_ids):
+def get_image_ids_aux(column_name, df, new_column_name, images_ids, credentials):
     
     df_aux = df[column_name]
     id_aux = []
     for elem in df_aux:
         if (elem != 'NaN' and elem != None):
-            id_aux.append(get_image_id(elem, images_ids))
+            id_aux.append(get_image_id(elem, images_ids, credentials))
         else:
             id_aux.append(None)
 
@@ -97,18 +95,20 @@ def get_image_ids_aux(column_name, df, new_column_name, images_ids):
 # id for different image folders it returns a modified dataframe with new columns that contain the file ids
 # for every picture of those trees contained in the .csv
 
-def get_image_ids(df, images_ids):
+def get_image_ids(df, images_ids, credentials):
 
     column_names = ['ID Foto Tronco', 'ID Foto Hojas', 'ID Foto inflorescencia', 'ID Foto fruto', 'ID Foto copa']
     new_column_names = ['Tronco ID', 'Hojas ID', 'Flores ID', 'Fruto ID', 'Copa ID']
 
     for num in range(len(column_names)):
-        df = get_image_ids_aux(column_names[num], df, new_column_names[num], images_ids)
+        df = get_image_ids_aux(column_names[num], df, new_column_names[num], images_ids, credentials)
     
     return df
 
-if __name__ == '__main__':
-    write_trees_csvs()
+def produce_results_csv():
+    credentials = login()
+    write_trees_csvs(credentials)
     df = get_trees_dataframes()
-    df2 = get_image_ids(df, ids_file.images_ids)
-    df2.to_csv('result.csv')
+    df2 = get_image_ids(df, ids_file.images_ids, credentials)
+    df2.to_csv('results.csv')
+

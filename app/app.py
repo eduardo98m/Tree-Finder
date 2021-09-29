@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 # internal modules
 from data_proc import procees_df
-from PyDrive.pydrive_functions import write_trees_csvs
+import PyDrive.pydrive_functions as pf
 
 import datetime 
 
@@ -43,18 +43,17 @@ st.title('La Floresta Tree Finder')
 
 species_data = pd.read_csv('data\Especies - Hoja 1.csv')
 
-# @Ian Necesito que qui lea el csv del drive
-raw_data = pd.read_csv("data/Parque Aruflo Levantamiento - Sector 1.csv")
-
+# Getting the data from Google Drive and processing it to add new needed columns.
+pf.produce_results_csv()
+raw_data = pd.read_csv("results.csv")
 
 
 
 raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
-												lambda x: float(x.replace(',', '.')))
+													lambda x: float(x.replace(',', '.')))
 
 raw_data["Circunferencia (m)"] = raw_data["Circunferencia (m)"].apply(
-												lambda x: float(x.replace(',', '.')))
-											
+												lambda x: float(x.replace(',', '.')))											
 
 raw_data["DAP (m)"] = raw_data["DAP (m)"].apply(
 												lambda x: float(x.replace(',', '.')))
