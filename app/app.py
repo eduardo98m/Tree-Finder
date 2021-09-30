@@ -47,17 +47,14 @@ species_data = pd.read_csv('data\Especies - Hoja 1.csv')
 pf.produce_results_csv()
 raw_data = pd.read_csv("results.csv")
 
-
-
 raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
-													lambda x: float(x.replace(',', '.')))
+													lambda x: float(x))
 
 raw_data["Circunferencia (m)"] = raw_data["Circunferencia (m)"].apply(
-												lambda x: float(x.replace(',', '.')))											
+												lambda x: float(x))											
 
 raw_data["DAP (m)"] = raw_data["DAP (m)"].apply(
-												lambda x: float(x.replace(',', '.')))
-
+												lambda x: float(x))
 
 raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'],format='%d/%m/%Y').dt.date
 
