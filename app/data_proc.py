@@ -85,7 +85,7 @@ def convert_observations(observations:str)->List[str]:
     return observations
 
 
-def create_species_df(raw_data:pd.DataFrame) -> pd.DataFrame:
+def create_species_dict(raw_data:pd.DataFrame) -> pd.DataFrame:
     """
     
     Args:
@@ -99,11 +99,18 @@ def create_species_df(raw_data:pd.DataFrame) -> pd.DataFrame:
         https://www.geeksforgeeks.org/pandas-find-unique-values-from-multiple-columns/
     """
 
+    """
     species_df = pd.concat([raw_data['Código de Especie'],
                             raw_data['Especie'],
                             raw_data['Nombre común']]).unique()
-    
-    return species_df
+    """
+    species_dict = {
+        'Código': list(raw_data['Código de Especie'].unique()),
+        'Nombre':  list(raw_data['Especie'].unique()),
+        'Nombre Común': list(raw_data['Nombre común'].unique())
+    }
+
+    return species_dict
 
 
 def procees_df(data):
@@ -118,7 +125,7 @@ def procees_df(data):
 
 
 
-    return data, create_species_df(data)
+    return data, create_species_dict(data)
 
 
 """

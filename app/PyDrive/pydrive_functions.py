@@ -109,6 +109,6 @@ def produce_results_csv():
     credentials = login()
     write_trees_csvs(credentials)
     df = get_trees_dataframes()
-    df2 = get_image_ids(df, ids_file.images_ids, credentials)
+    df2 = get_image_ids(df, ids_file.images_ids, credentials).reset_index()
     df2.to_csv('results.csv')
 

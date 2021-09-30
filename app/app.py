@@ -3,9 +3,9 @@ import pydeck as pdk
 import numpy as np
 import pandas as pd
 import plotly.express as px
+
 # internal modules
 from data_proc import procees_df
-import PyDrive.pydrive_functions as pf
 
 import datetime 
 
@@ -41,10 +41,10 @@ st.title('La Floresta Tree Finder')
 # Query the trees data
 
 
-species_data = pd.read_csv('data\Especies - Hoja 1.csv')
+
 
 # Getting the data from Google Drive and processing it to add new needed columns.
-pf.produce_results_csv()
+
 raw_data = pd.read_csv("results.csv")
 
 raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
@@ -60,6 +60,19 @@ raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'],format='%d/%m/%Y').dt.date
 
 df_display = raw_data
 
+map_data, species_data = procees_df(df_display)
+
+
+print(map_data)
+Atributes = ["lat", 
+			"lon",
+			"Código", 
+			'Tronco ID', 
+			'Hojas ID',  
+			'Copa ID'
+			]
+
+map_data = map_data[Atributes].dropna()
 
 # Pydeck
 #----------------------------------------------------------------------------------------#
@@ -93,16 +106,16 @@ with st.form(key='tree_query'):
 
 	
 	codigo_de_especie = col1.multiselect("Código de Especie", 
-											list(species_data["Código"]) + [],
+											species_data["Código"] + [],
 											default = [] )
 	
-	especie = col1.multiselect("Especies", list(species_data["Nombre"]) + [],
+	especie = col1.multiselect("Especies", species_data["Nombre"] + [],
 										 default = [])
 
 	
 
 	nombre_comun = col1.multiselect("Nombre común", 
-									list(species_data["Nombre Común"]) + [],
+									species_data["Nombre Común"] + [],
 									default = [])
 	
 	
@@ -121,7 +134,7 @@ with st.form(key='tree_query'):
 										0.0, 5.0, (0., 5.0))
 	
 	dap = col2.slider('Rango de DAP', 
-										0.0, 1.0, (0., 1.0))
+										0.0, 50.0, (0., 50.0))
 	
 	query_expr.append(" @altura[0] <= `Altura (m)` <= @altura[1] and "
 					  " @circunferencia[0] <= `Circunferencia (m)` <= @circunferencia[1] "
@@ -150,7 +163,7 @@ my_placeholder = st.empty()
 
 #
 
-st.write(df_display)
+st.write(map_data)
 
 #df_display["Especie"] = df_display.Especie.astype('category')
 
@@ -168,18 +181,10 @@ st.write(df_display.describe()[["Altura (m)",  "Circunferencia (m)", "DAP (m)"]]
 
 id ="19Xmp0UlcfBU85EdLLV8eQDsJ_5KpLWRu"
 
-img_src = "https://drive.google.com/thumbnail?id=" + id
+img_src = "https://drive.google.com/thumbnail?id=" 
 
 
-Atributes = ["lat", 
-			"lon",
-			"Especie",
-			"Código", 
-			"Altura (m)", 
-			"Circunferencia (m)",
-			"Altura (m)",
-			"DAP (m)" 
-			]
+
 
 
 tooltip = {
@@ -187,7 +192,9 @@ tooltip = {
 			"<b>Altura (m): </b> {Altura (m)} <br /> "
 			"<b>Circunferencia (m): </b> {Circunferencia (m)} <br /> "
 			"<b>DAP (m): </b> {DAP (m)} <br /> "
-		   "<b>Image</b> <img src= " + str(img_src) + "> <br />"
+		   "<img src= " + img_src + "{Tronco ID}>"
+		   "<img src= " + img_src + "{Hojas ID}> "
+		   "<img src= " + img_src + "{Copa ID}> "
 		   "<b>Código: </b> {Código} <br /> ",
    "style": {
         "backgroundColor": "steelblue",
@@ -195,13 +202,13 @@ tooltip = {
    }
 }
 print("meme1")
-map_data = procees_df(df_display)[0][Atributes].dropna()
+
 print("meme2")
 st.header('Mapa')
 print("meme3")
 query_layer = pdk.Layer(
 				"ScatterplotLayer",
-				data = map_data,
+				data = map_data.dropna(),
 				get_position=['lon', 'lat'],
 				radiusScale = 1,
 				radius_min_pixels = 4, # Modify to match the scale of the park trees
