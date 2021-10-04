@@ -45,7 +45,7 @@ st.title('La Floresta Tree Finder')
 
 # Getting the data from Google Drive and processing it to add new needed columns.
 
-raw_data = pd.read_csv("results.csv")
+raw_data = pd.read_csv("app/results.csv")
 
 raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
 													lambda x: float(x))
