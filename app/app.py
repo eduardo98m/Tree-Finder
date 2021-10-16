@@ -45,6 +45,8 @@ st.title('La Floresta Tree Finder')
 
 # Getting the data from Google Drive and processing it to add new needed columns.
 
+# The following lines may change 
+#---------------------------------------------------------------------------------------#
 raw_data = pd.read_csv("results.csv")
 
 raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
@@ -60,8 +62,8 @@ raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'],format='%d/%m/%Y').dt.date
 
 df_display = raw_data
 
-map_data, species_data = procees_df(df_display)
-
+map_data, species_data, obs_list = procees_df(df_display)
+#---------------------------------------------------------------------------------------#
 
 print(map_data)
 Atributes = ["lat", 
@@ -132,14 +134,21 @@ with st.form(key='tree_query'):
 	altura = col2.slider('Rango de altura', 0.0, 50.0, (0., 50.0))
 	circunferencia = col2.slider('Rango de circunferencia', 
 										0.0, 5.0, (0., 5.0))
-	
+
 	dap = col2.slider('Rango de DAP', 
 										0.0, 50.0, (0., 50.0))
 	
 	query_expr.append(" @altura[0] <= `Altura (m)` <= @altura[1] and "
 					  " @circunferencia[0] <= `Circunferencia (m)` <= @circunferencia[1] "
 					  "and @dap[0] <= `DAP (m)` <= @dap[1]")
+	
+	col2.subheader('Observaciones')
 
+	observaciones = col2.multiselect("Observaciones", obs_list + [],
+										 default = [])
+
+	for obs in observaciones:
+		query_expr.append("`"+str(obs) + "`" + "== 1")
 	
 	st.subheader('Fecha de Registro')
 
@@ -153,7 +162,7 @@ with st.form(key='tree_query'):
 
 	st.form_submit_button()
 
-df_display = raw_data
+df_display = raw_data.copy()
 if query_expr!=[]:
 	for expr in query_expr:
 		df_display.query(expr, inplace=True)						

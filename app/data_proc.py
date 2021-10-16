@@ -66,12 +66,14 @@ def geo_to_decimal_degrees(coordinate:str)->float:
 # Covert the observations
 def convert_observations(observations:str)->List[str]:
     """
+    Parses a string with observations separated by comas.
 
     Args:
-        observations: str ->
+        observations: str -> Obesrvations string, each observation must be separated 
+                             by a coma. Example "Green, ugly, has errors"
 
     Retrun:
-        List[str]
+        List[str] -> List of the parsed observations.
 
     References:
     """
@@ -82,28 +84,25 @@ def convert_observations(observations:str)->List[str]:
 
     observations = re.split(',+', observations)
 
+    observations = [obs.strip() for obs in observations]
+
     return observations
 
 
-def create_species_dict(raw_data:pd.DataFrame) -> pd.DataFrame:
+def create_species_dict(raw_data:pd.DataFrame) -> dict:
     """
     
     Args:
         raw_data  : pd.DataFrame -> Dataframe with all the collected data.
 
     Retrun:
-        species_df: pd.DataFrame -> Dataframe containing the name info of all the 
+        species_df: dict -> Dataframe containing the name info of all the 
                                     tree species. (Code, Name, and common name)
 
     References:
         https://www.geeksforgeeks.org/pandas-find-unique-values-from-multiple-columns/
     """
 
-    """
-    species_df = pd.concat([raw_data['Código de Especie'],
-                            raw_data['Especie'],
-                            raw_data['Nombre común']]).unique()
-    """
     species_dict = {
         'Código': list(raw_data['Código de Especie'].unique()),
         'Nombre':  list(raw_data['Especie'].unique()),
@@ -113,31 +112,71 @@ def create_species_dict(raw_data:pd.DataFrame) -> pd.DataFrame:
     return species_dict
 
 
-def procees_df(data):
+
+def create_obs(df:pd.DataFrame)->tuple:
+    """
+    Creates a boolean column for each observation in the dataframe with a column named 
+    "Observaciones", that column must have  observations separated by comas in each 
+    of its rows. The function also creates a list of all the unique observations.
+
+    Example: df["Observaciones"] = ["green, tall", "greeen, good", "red, ugly"]
+
+    Args:
+        df: pd.DataFrame ->  Dataframe of where the observations are going to be parsed
+    Returns:
+        df:pd.DataFrame ->  Dataframe with the observations already parsed and inserted.
+        list(obs_list): list:-> List with the unique observations of the dataframe.
+
+    """
+
+    df["New_obs"] = df["Observaciones"].map(convert_observations)
+    
+    df["New_obs"].fillna(value='', inplace=True)
+
+
+    obs_list = pd.Series([item for sublist in df['New_obs'].tolist() 
+                          for item in sublist]).unique() 
+
+    
+    for obs in obs_list:
+        df[obs] = np.zeros(len(df)) 
+
+
+    for index, row in df.iterrows(): 
+        for elem_obs in row['New_obs']:
+            df.at[index,elem_obs] = 1
+
+    df.drop("New_obs", axis=1, inplace=True)
+    
+    return df, list(obs_list)
+        
+
+
+
+def procees_df(data:pd.DataFrame)->tuple:
     """
     
+    Proceses the dataframe and creates aditional elements for the data to be displayed on 
+    the app.
+
+    Args:
+        data: pd.DataFrame-> The data frame with the trees info.
+
+    Returns:
+        data: pd.DataFrame-> 
+        
+        dict -> Dictionary containig the species data.
+
+        obs_list: List contianing each unique observation for each elemnte of the 
+                  trees dataframe
+
     """
 
     data["lat"] = data["Latitud"].map(geo_to_decimal_degrees)
     data["lon"] = data["Longitud"].map(geo_to_decimal_degrees)
     
-    #data["New_obs"] = data["Observaciones"].map(convert_observations)
+    data, obs_list = create_obs(data)
+
+    return data, create_species_dict(data), obs_list
 
 
-
-    return data, create_species_dict(data)
-
-
-"""
-# Data 
-
-raw_data = pd.read_csv("data\Parque Aruflo Levantamiento - Sector 1.csv")
-
-print(raw_data["Observaciones"])
-
-df, especies = procees_df(raw_data)
-
-
-print(df[['lat', 'lon']].dropna())
-print(especies)
-"""
