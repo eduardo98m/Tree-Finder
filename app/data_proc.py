@@ -153,7 +153,7 @@ def create_obs(df:pd.DataFrame)->tuple:
 
 
 
-def procees_df(data:pd.DataFrame)->tuple:
+def process_df(data:pd.DataFrame)->tuple:
     """
     
     Proceses the dataframe and creates aditional elements for the data to be displayed on 
