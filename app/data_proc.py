@@ -198,6 +198,9 @@ def  load_data():
 
     with open('app/data/observations.pkl', 'rb') as handle:
         obs_list = pickle.load(handle)
+
+    with open('app/data/sectors.pkl', 'rb') as handle:
+        sectors = pickle.load(handle)
     
     raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
                                                         lambda x: float(x))
@@ -212,7 +215,7 @@ def  load_data():
     
     df_display = raw_data
 
-    return df_display, species_dict, obs_list
+    return df_display, species_dict, obs_list, sectors
 
 
 

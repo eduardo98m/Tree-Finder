@@ -9,8 +9,9 @@ import plotly.express as px
 import pickle
 # internal modules
 from data_proc import load_data
-
+from get_data import update_data
 import datetime 
+
 
 
 st.set_page_config(
@@ -26,7 +27,7 @@ st.set_page_config(
 
 
 pages = ["🗺️🌲 Mapa Interactivo",
-        "🌳🌲🌴🎋 Árboles de la Floresta", 
+        "🌳🌲 Árboles de la Floresta 🌴🎋", 
         "📚 References"
 ]
 
@@ -52,7 +53,7 @@ components.html(
 
 # App layout #
 st.title('La Floresta Tree Finder')
-
+st.title(st.session_state.current_page)
 
 # Query the trees data
 
@@ -60,18 +61,22 @@ st.title('La Floresta Tree Finder')
 #---------------------------------------------------------------------------------------#
 
 
-full_data, species_data, obs_list = load_data()
+full_data, species_data, obs_list, sectors = load_data()
 
 
 Atributes = ["lat", 
 			"lon",
-			"Código", 
+			"Código",
+			"Nombre común",
+			"Sector",
+			"Observaciones",
+			"Fecha",
 			"ID Foto Tronco google_id",
 			"ID Foto Hojas google_id",
 			"ID Foto inflorescencia google_id",
 			"ID Foto fruto google_id",
 			"ID Foto copa google_id"
-			]
+			] + obs_list
 
 map_data = full_data[Atributes].dropna()
 
@@ -99,7 +104,7 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 		
 
 		sector = col1.multiselect("Sector", 
-								["Sector 1", "Sector 2", "Sector 3", "Sector 4"] + [],
+								sectors + [],
 								default = [])
 		
 		
@@ -107,6 +112,11 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 		if 	nombre_comun != []:
 			
 			query_expr.append("`Nombre común` == @nombre_comun")
+		
+		if 	sector != []:
+			
+			query_expr.append("`Sector` == @sector")
+			
 			
 
 		col2.subheader('Observaciones')
@@ -132,8 +142,10 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 	df_display = full_data.copy()
 	if query_expr:
 		for expr in query_expr:
-			df_display.query(expr, inplace=True)						
-
+			df_display.query(expr, inplace=True)
+			map_data.query(expr, inplace=True)
+									
+	map_data.drop('Fecha', inplace=True, axis=1)
 
 	my_placeholder = st.empty()
 
@@ -159,36 +171,29 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 
 	# Map display
 
-	id ="19Xmp0UlcfBU85EdLLV8eQDsJ_5KpLWRu"
-
 	img_src = "https://drive.google.com/thumbnail?id=" 
 
 
 
-
-
 	tooltip = {
-	"html" : "<b>Especie: </b> {Especie} <br /> "
-				"<b>Altura (m): </b> {Altura (m)} <br /> "
-				"<b>Circunferencia (m): </b> {Circunferencia (m)} <br /> "
-				"<b>DAP (m): </b> {DAP (m)} <br /> "
-			"<img src= " + img_src + "{ID Foto Tronco google_id}>"
-			"<img src= " + img_src + "{ID Foto Hojas google_id}> "
-			"<img src= " + img_src + "{ID Foto copa google_id}> "
-			"<img src= " + img_src + "{ID Foto inflorescencia google_id}>"
-			"<img src= " + img_src + "{ID Foto fruto google_id}>"
-			"<b>Código: </b> {Código} <br /> ",
+	"html" :"<b>Código: </b> {Código} <br /> "
+			"<b>Especie: </b> {Nombre común} <br /> "
+			"<b>Observaciones:<br /> "
+			"</b> {Observaciones} <br /> "
+			"<img src= " + img_src + "{ID Foto copa google_id}> ",
 	"style": {
 			"backgroundColor": "steelblue",
-			"color": "white"
+			"color": "white",
+  			'font-family': 'Courier New',
 	}
 	}
+
 
 	st.header('Mapa')
 
 	query_layer = pdk.Layer(
 					"ScatterplotLayer",
-					data = map_data.dropna(),
+					data = map_data,
 					get_position=['lon', 'lat'],
 					radiusScale = 1,
 					radius_min_pixels = 4, # Modify to match the scale of the park trees
@@ -197,14 +202,18 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 					pickable=True,
 					)
 
-	st.pydeck_chart(pdk.Deck(
-				initial_view_state={"latitude": 10.4945, # La Floresta coordinates
-				"longitude": -66.8456, "zoom": 15, "pitch":30},
-				layers=[query_layer],
-				tooltip=tooltip,
-			))
+	
+	pydeck_map = pdk.Deck(
+					initial_view_state={"latitude": 10.4945, # La Floresta coordinates
+					"longitude": -66.8456, "zoom": 15, "pitch":30},
+					layers=[query_layer],
+					tooltip=tooltip,
+					)
 
-if  st.session_state.current_page == "🌳🌲🌴🎋 Árboles de la Floresta":
+
+	st.pydeck_chart(pydeck_map)
+
+if  st.session_state.current_page == "🌳🌲 Árboles de la Floresta 🌴🎋":
 	show_tree_info()
 
 with st.sidebar.expander("Update Form"):
@@ -213,6 +222,6 @@ with st.sidebar.expander("Update Form"):
 	password = st.text_input('Password', type = "password" )
 
 	if username == st.secrets["USERNAME"] and password == st.secrets["PASSWORD"]:
-		actualizar = st.button("Actualizar")
+		actualizar = st.button("Actualizar", on_click = update_data)
 		if actualizar:
-			print("Datos Actualziados")
+			print("Datos Actualizados")

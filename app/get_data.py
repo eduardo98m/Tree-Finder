@@ -3,6 +3,8 @@ import streamlit as st
 from data_proc import process_df
 import urllib.request, json 
 import os
+import pickle
+
 
 #@st.cache()
 def get_tree_data_df(delete_file = False):
@@ -27,6 +29,9 @@ def get_tree_data_df(delete_file = False):
 
         process_df(df)
 
+        with open('app/data/sectors.pkl', 'wb') as handle:
+            pickle.dump(data_info["Sectores"], handle, protocol=pickle.HIGHEST_PROTOCOL)
+
     
 
 
@@ -42,5 +47,4 @@ def update_data():
     get_tree_data_df(delete_file = True)
 
 
-update_data()
 
