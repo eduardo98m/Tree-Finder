@@ -182,8 +182,8 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 			"</b> {Observaciones} <br /> "
 			"<img src= " + img_src + "{ID Foto copa google_id}> ",
 	"style": {
-			"backgroundColor": "steelblue",
-			"color": "white",
+			"backgroundColor": "LightGreen",
+			"color": "DarkSlateGray",
   			'font-family': 'Courier New',
 	}
 	}
