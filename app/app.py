@@ -2,6 +2,7 @@ from pyparsing import col
 import streamlit as st
 import streamlit.components.v1 as components
 from treeinfo import show_tree_info
+from pageinfo import page_info
 
 import pydeck as pdk
 import numpy as np
@@ -272,3 +273,4 @@ with st.sidebar.expander("Update Form"):
 		if actualizar:
 			print("Datos Actualizados")
 
+page_info()
