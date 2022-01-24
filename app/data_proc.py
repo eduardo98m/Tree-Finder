@@ -2,6 +2,9 @@ import pandas as pd
 import re
 from typing import *
 import numpy as np
+import pickle
+import streamlit as st
+import dateutil.parser
 
 
 """
@@ -153,30 +156,66 @@ def create_obs(df:pd.DataFrame)->tuple:
 
 
 
-def procees_df(data:pd.DataFrame)->tuple:
+def process_df(data:pd.DataFrame)->None:
     """
     
     Proceses the dataframe and creates aditional elements for the data to be displayed on 
-    the app.
+    the app, saves the proccesed elements in the data directory.
 
     Args:
         data: pd.DataFrame-> The data frame with the trees info.
 
     Returns:
-        data: pd.DataFrame-> 
-        
-        dict -> Dictionary containig the species data.
-
-        obs_list: List contianing each unique observation for each elemnte of the 
-                  trees dataframe
+        None
 
     """
 
     data["lat"] = data["Latitud"].map(geo_to_decimal_degrees)
     data["lon"] = data["Longitud"].map(geo_to_decimal_degrees)
+    data["Fecha"] = data["Fecha"].map(lambda string: str(string).split(" GMT", 1)[0] )
     
     data, obs_list = create_obs(data)
+    
+    data.to_csv("app/data/results.csv")
 
-    return data, create_species_dict(data), obs_list
+    with open('app/data/species.pkl', 'wb') as handle:
+        pickle.dump(create_species_dict(data), handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open('app/data/observations.pkl', 'wb') as handle:
+        pickle.dump(obs_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+@st.cache
+def  load_data():
+    """
+    
+    """
+
+    raw_data = pd.read_csv("app/data/results.csv")
+
+
+    with open('app/data/species.pkl', 'rb') as handle:
+        species_dict = pickle.load(handle)
+
+    with open('app/data/observations.pkl', 'rb') as handle:
+        obs_list = pickle.load(handle)
+
+    with open('app/data/sectors.pkl', 'rb') as handle:
+        sectors = pickle.load(handle)
+    
+    raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
+                                                        lambda x: float(x))
+
+    raw_data["Circunferencia (m)"] = raw_data["Circunferencia (m)"].apply(
+                                                    lambda x: float(x))											
+
+    raw_data["DAP (m)"] = raw_data["DAP (m)"].apply(
+                                                    lambda x: float(x))
+
+    raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'],format='%a %b %d %Y %H:%M:%S').dt.date
+    
+    df_display = raw_data
+
+    return df_display, species_dict, obs_list, sectors
+
 
 

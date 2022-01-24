@@ -5,6 +5,8 @@ import requests
 import json
 import os
 import PyDrive.ids_file as ids_file
+from PyDrive.data_proc import process_df
+import pickle
 
 directorio_credentials = 'credentials_module.json'
 
@@ -110,5 +112,14 @@ def produce_results_csv():
     write_trees_csvs(credentials)
     df = get_trees_dataframes()
     df2 = get_image_ids(df, ids_file.images_ids, credentials).reset_index()
+
+    df2, species_dict, obs_list = process_df(df2)
+
+    with open('obs_list.pkl', 'wb') as handle:
+        pickle.dump(obs_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    with open('species_dict.pkl', 'wb') as handle:
+        pickle.dump(species_dict, handle)
+
     df2.to_csv('results.csv')
 
