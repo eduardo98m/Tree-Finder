@@ -13,6 +13,9 @@ from get_data import update_data
 import datetime 
 
 
+# Removal of the default Streamlit Main Menu and footer
+
+
 
 st.set_page_config(
      page_title="Floresta Tree Finder",
@@ -25,10 +28,18 @@ st.set_page_config(
      }
  )
 
+hide_menu_style = """
+        <style>
+        #MainMenu {visibility: hidden; }
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
 
 pages = ["🗺️🌲 Mapa Interactivo",
         "🌳🌲 Árboles de la Floresta 🌴🎋", 
-        "📚 Referencias"
+        "🗘 Actualizar Datos"
 ]
 
 st.session_state.current_page = st.sidebar.radio(
@@ -261,14 +272,18 @@ if st.session_state.current_page == "🗺️🌲 Mapa Interactivo":
 if  st.session_state.current_page == "🌳🌲 Árboles de la Floresta 🌴🎋":
 	show_tree_info()
 
-with st.sidebar.expander("Update Form"):
 
-	username = st.text_input('Username') 
-	password = st.text_input('Password', type = "password" )
+if  st.session_state.current_page == "🗘 Actualizar Datos":
 
-	if username == st.secrets["USERNAME"] and password == st.secrets["PASSWORD"]:
-		actualizar = st.button("Actualizar", on_click = update_data)
-		if actualizar:
-			print("Datos Actualizados")
+	with st.expander("Formulario de Actualización"):
+
+		username = st.text_input('Usuario') 
+		password = st.text_input('Contraseña', type = "password" )
+
+		if username == st.secrets["USERNAME"] and password == st.secrets["PASSWORD"]:
+			st.success("Bienvenido, presione el botón para actualizar los datos de la aplicación")
+			actualizar = st.button("Actualizar", on_click = update_data)
+			if actualizar:
+				print("Datos Actualizados")
 
 page_info()
