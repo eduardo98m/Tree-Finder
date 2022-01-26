@@ -12,5 +12,5 @@ def page_info():
     <a href="https://github.com/eduardo98m/Tree-Finder" title="Repositorio de github del proyecto">Código de la Página</a>
     </center>
     """, unsafe_allow_html=True)
-    #col3.image()
+   
 
