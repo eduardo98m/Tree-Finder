@@ -27,7 +27,7 @@ The spreadsheet can contain any amount and kind of columns, the only columns to 
 ```
 photo_columns = ["ID Foto Tronco",	"ID Foto Hojas", "ID Foto inflorescencia","ID Foto fruto","ID Foto copa"]
 ```
-If you want to use diferent column names for the photos you must change the `photo_columns` variable to the columns you want to use inside the function `set_photo_columns()` in the google appscript file (line 183).
+If you want to use diferent column names for the photos you must change the `photo_columns` variable to the columns you want to use inside the function `set_photo_columns()` in the google appscript file (line 229).
 
 In case you ar ussing diferent sheets for diferent sectors (i.e diferent sheets  inside the google sheet file for  zones with trees) all the columns betweent sheets must be the same in the same position (see the [example sheet](https://docs.google.com/spreadsheets/d/1EcDP0P7dB9FYa2iXpSnD5WmczRM8CDPOq4xvHR7XZ64/edit?usp=sharing)).
   
