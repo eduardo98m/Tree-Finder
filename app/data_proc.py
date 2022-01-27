@@ -4,32 +4,18 @@ from typing import *
 import numpy as np
 import pickle
 import streamlit as st
-import dateutil.parser
 
 
 """
 Script purpose:
 
 Transform the queried data from the database to usable data.
-
-raw_data:
-    Tasks:
-        * Covert geo coordinates to metric.
-        * Calculate the tree radius. (Average)
-        * Get the photos google-ids. (Ian's part)
-        * Covert the observations. [Not Done]
-            * Covertobservations into a list
-            * Create new columns for each observation
-            * Asing True//False values 
-        * Create species dataframe. [Done]
-    
-    Testing:
 """
 
 
 # Convert geo coordinates to metric.
 @np.vectorize
-def geo_to_decimal_degrees(coordinate:str)->float: 
+def geo_to_decimal_degrees(coordinate: str) -> float:
     """
 
     Args:
@@ -38,8 +24,8 @@ def geo_to_decimal_degrees(coordinate:str)->float:
                            Example: "66° 50' 50,4'' E"
     Return:
         float -> Geografical coordinate in decimal format
-        
-    
+
+
     References:
         https://gist.github.com/chrisjsimpson/076a82b51e8540a117e8aa5e793d06ec
 
@@ -48,13 +34,13 @@ def geo_to_decimal_degrees(coordinate:str)->float:
         return None
     # First we eliminate the spaces
     dms_str = re.sub(r'\s', '', coordinate)
-    
+
     # Change the sing if the coordinate is south or west
     sign = -1 if re.search('[swSW]', dms_str) else 1
-    
+
     # separate the coordinate numbers
     numbers = [*filter(len, re.split('\D+', dms_str, maxsplit=5))]
-    
+
     # Get each of the sexagesimal values
     degree = numbers[0]
     minute = numbers[1] if len(numbers) >= 2 else '0'
@@ -63,11 +49,11 @@ def geo_to_decimal_degrees(coordinate:str)->float:
     second += "." + frac_seconds
 
     # Conversion is performed and returned
-    return  sign*(int(degree) + float(minute) / 60 + float(second) / 3600)
+    return sign*(int(degree) + float(minute) / 60 + float(second) / 3600)
 
 
 # Covert the observations
-def convert_observations(observations:str)->List[str]:
+def convert_observations(observations: str) -> List[str]:
     """
     Parses a string with observations separated by comas.
 
@@ -92,9 +78,9 @@ def convert_observations(observations:str)->List[str]:
     return observations
 
 
-def create_species_dict(raw_data:pd.DataFrame) -> dict:
+def create_species_dict(raw_data: pd.DataFrame) -> dict:
     """
-    
+
     Args:
         raw_data  : pd.DataFrame -> Dataframe with all the collected data.
 
@@ -115,8 +101,7 @@ def create_species_dict(raw_data:pd.DataFrame) -> dict:
     return species_dict
 
 
-
-def create_obs(df:pd.DataFrame)->tuple:
+def create_obs(df: pd.DataFrame) -> tuple:
     """
     Creates a boolean column for each observation in the dataframe with a column named 
     "Observaciones", that column must have  observations separated by comas in each 
@@ -133,32 +118,26 @@ def create_obs(df:pd.DataFrame)->tuple:
     """
 
     df["New_obs"] = df["Observaciones"].map(convert_observations)
-    
+
     df["New_obs"].fillna(value='', inplace=True)
 
+    obs_list = pd.Series([item for sublist in df['New_obs'].tolist()
+                          for item in sublist]).unique()
 
-    obs_list = pd.Series([item for sublist in df['New_obs'].tolist() 
-                          for item in sublist]).unique() 
-
-    
     for obs in obs_list:
-        df[obs] = np.zeros(len(df)) 
+        df[obs] = np.zeros(len(df))
 
-
-    for index, row in df.iterrows(): 
+    for index, row in df.iterrows():
         for elem_obs in row['New_obs']:
-            df.at[index,elem_obs] = 1
+            df.at[index, elem_obs] = 1
 
     df.drop("New_obs", axis=1, inplace=True)
-    
+
     return df, list(obs_list)
-        
 
 
-
-def process_df(data:pd.DataFrame)->None:
-    """
-    
+def process_df(data: pd.DataFrame) -> None:
+    """ 
     Proceses the dataframe and creates aditional elements for the data to be displayed on 
     the app, saves the proccesed elements in the data directory.
 
@@ -172,27 +151,38 @@ def process_df(data:pd.DataFrame)->None:
 
     data["lat"] = data["Latitud"].map(geo_to_decimal_degrees)
     data["lon"] = data["Longitud"].map(geo_to_decimal_degrees)
-    data["Fecha"] = data["Fecha"].map(lambda string: str(string).split(" GMT", 1)[0] )
-    
+    data["Fecha"] = data["Fecha"].map(
+        lambda string: str(string).split(" GMT", 1)[0])
+
     data, obs_list = create_obs(data)
-    
+
     data.to_csv("app/data/results.csv")
 
     with open('app/data/species.pkl', 'wb') as handle:
-        pickle.dump(create_species_dict(data), handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(create_species_dict(data), handle,
+                    protocol=pickle.HIGHEST_PROTOCOL)
 
     with open('app/data/observations.pkl', 'wb') as handle:
         pickle.dump(obs_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-@st.cache
-def  load_data():
-    """
-    
-    """
 
+@st.cache
+def load_data() -> None:
+    """
+    Loads the data from the .csv and the .pkl files.
+
+    Argas:
+        None
+    Returns:
+        df_display: pd.DataFrame -> Dataframe with the data to be displayed on the app.
+        species_dict: dict -> Dictionary with the species info.
+        obs_list: list -> List with the unique observations.
+        sectors: list -> List with the unique sectors.
+    """
+    # The dataframe is loaded
     raw_data = pd.read_csv("app/data/results.csv")
 
-
+    # Pickle files are loaded
     with open('app/data/species.pkl', 'rb') as handle:
         species_dict = pickle.load(handle)
 
@@ -201,21 +191,20 @@ def  load_data():
 
     with open('app/data/sectors.pkl', 'rb') as handle:
         sectors = pickle.load(handle)
-    
+
+    # Float columns are converted to floats (they are loaded as strings)
     raw_data["Altura (m)"] = raw_data["Altura (m)"].apply(
-                                                        lambda x: float(x))
+        lambda x: float(x))
 
     raw_data["Circunferencia (m)"] = raw_data["Circunferencia (m)"].apply(
-                                                    lambda x: float(x))											
+        lambda x: float(x))
 
     raw_data["DAP (m)"] = raw_data["DAP (m)"].apply(
-                                                    lambda x: float(x))
+        lambda x: float(x))
+    # The date column 'Fecha' is parsed to a datetime object
+    raw_data['Fecha'] = pd.to_datetime(
+        raw_data['Fecha'], format='%a %b %d %Y %H:%M:%S').dt.date
 
-    raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'],format='%a %b %d %Y %H:%M:%S').dt.date
-    
     df_display = raw_data
 
     return df_display, species_dict, obs_list, sectors
-
-
-
