@@ -28,7 +28,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items={
-        'Report a bug': "https://fundacionespacio.com",
+        'Report a bug': "https://github.com/eduardo98m/Tree-Finder",
         'About': "https://fundacionespacio.com"
     }
 )
